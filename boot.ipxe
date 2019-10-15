@@ -1,0 +1,107 @@
+#!ipxe
+
+#########################################################################
+# File: boot.ipxe
+# Created by: Dmitri G.
+# Date: 2019-10-15
+# Description: This Command File Run iPXE routine
+#########################################################################
+
+echo
+echo .........................................
+echo . \/\/\/ Runing the iPXE routine /\/\/\ .
+echo . ************** v1.0b **************** .
+echo . /\/\ Created By: Dmitri G. (2019) /\/ .
+echo .........................................
+echo
+
+# Get IP address
+dhcp
+
+# Variables setup
+set protocol http
+set server_ip xx.xx.x.xx # Set your HTTP server IP address
+set dban_iso dban-2.3.0_i586.iso
+set arch_x86_64 archlinux-2019.10.01-x86_64.iso
+set arch_i686 archlinux-2019.10.07-i686.iso
+set base ${protocol}://${server_ip}/boot
+set arch_base ${protocol}://${server_ip}/boot/archlinux-2019.10.07-i686
+
+###################
+:boot_menu
+###################
+menu *** MAIN MENU ***
+item --gap Tools
+item ipxe_dhcp Get IP by DHCP
+item winpe Windows PE
+item dban DBAN
+item --gap Linux installers
+item arch64 archlinux-x86_64 ISO boot
+item arch32 archlinux-i686 ISO boot
+item arch_i686 archlinux-i686 boot
+item --gap iPXE shell
+item shell Drop to iPXE shell
+
+choose target && goto ${target}
+
+###################
+# Menu
+###################
+
+:failed
+echo Booting failed, Dropping to shell !!!
+goto shell
+
+:ipxe_dhcp
+echo Run IP request...
+dhcp
+goto boot_menu
+
+:shell
+echo Type 'exit' to get the back to the MENU !!!
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto boot_menu
+
+:winpe
+echo Running WinPE...
+
+kernel ${base}/wimboot
+initrd ${base}/winpe/media/Boot/BCD          BCD
+initrd ${base}/winpe/media/Boot/boot.sdi     boot.sdi
+initrd ${base}/winpe/media/sources/boot.wim  boot.wim
+boot || goto failed
+
+:dban
+echo Running DBAN...
+
+kernel ${base}/memdisk || read void
+initrd ${base}/iso/${dban_iso} || read void
+imgargs memdisk iso raw || read void
+boot || goto failed
+
+:arch64
+echo Running Arch Linux x86_64 installer...
+
+kernel ${base}/memdisk || read void
+initrd ${base}/iso/${arch_x86_64} || read void
+imgargs memdisk iso raw || read void
+boot || goto failed
+
+:arch32
+echo Running Arch Linux i686 installer...
+
+kernel ${base}/memdisk || read void
+initrd ${base}/iso/${arch_i686} || read void
+imgargs memdisk iso raw || read void
+boot || goto failed
+
+:arch_i686
+echo Running Arch Linux i686 installer...
+echo Your IP is (IP::GateWay:NetMask): ${net0/ip}::${net0/gateway}:${net0/netmask}
+set params archiso_http_srv=${arch_base}/ archisobasedir=arch ip=${net0/ip}::${net0/gateway}:${net0/netmask}
+kernel ${base}/vmlinuz ${params} initrd=archiso.img
+initrd ${base}/archiso.img
+boot || goto failed
+
