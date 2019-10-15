@@ -7,7 +7,8 @@ Code descriptions
 
 * `boot.ipxe`: This script helps to use tools and installers for easy infrastructure deployments. It was made for [iPXE][ipxe] cause it is much more flexible compare to ordinary [PXE][pxe] boot. More about [iPXE][ipxe] you can read on [iPXE][ipxe] official site. Cause I use ordinary network cards for network booting I provide the `chainloading iPXE` technique according to [official documentation][chainload]. The current diagram shows the files location in the root of HTTP server (simplified scheme):  
 
-`/WEB Server ROOT
+```
+/ WEB Server ROOT
 ├── archiso.img
 ├── archlinux-2019.10.07-i686
 │   ├── EFI
@@ -24,7 +25,8 @@ Code descriptions
 ├── vmlinuz
 ├── wimboot
 └── winpe
-    └── media`
+    └── media
+```
 
 * `All Applications and Scripts`:  
    **Note:** The `undionly.kpxe` compilation process described in [official documentation][chainload] and compiled by this command `make bin/undionly.kpxe EMBED=boot.ipxe`. In these examples shown how to BOOT by [iPXE][ipxe] with different ways.  
