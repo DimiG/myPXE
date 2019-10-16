@@ -31,7 +31,7 @@ Code descriptions
 * `All Applications and Scripts`:  
    **Note:** The `undionly.kpxe` compilation process described in [official documentation][chainload] and compiled by this command `make bin/undionly.kpxe EMBED=boot.ipxe`. In these examples shown how to BOOT by [iPXE][ipxe] with different ways.  
    ***Requires :*** [PXE][pxe] boot demands to have [DHCP][dhcp], [TFTP][tftp] and [HTTP][http] servers. [DHCP][dhcp] server redirects the [DHCP][dhcp] request from client to [TFTP][tftp] server which provides the compiled `undionly.kpxe` from `boot.ipxe`. The binary `undionly.kpxe` makes request to local/internet [HTTP][http] server which provides necessary files to boot.  
-   ***Important:*** These scripts may contain bugs and may not always behave as expected. You were warned ;). The host MUST have 1Gb [RAM][ram] as minimum!  
+   ***Important:*** These scripts may contain bugs and may not always behave as expected. You were warned ;). The host MUST have 1Gb [RAM][ram] as minimum! DON'T FORGET to set your [HTTP][http] server IP address in `boot.ipxe`.  
 
 * `To be continued...`  
 
