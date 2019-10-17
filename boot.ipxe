@@ -3,7 +3,7 @@
 #########################################################################
 # File: boot.ipxe
 # Created by: Dmitri G.
-# Date: 2019-10-16
+# Date: 2019-10-17
 # Description: This Command File Run iPXE routine
 #########################################################################
 
@@ -29,6 +29,8 @@ set server_ip xx.xx.x.xx
 set dban_iso dban-2.3.0_i586.iso
 set arch_x86_64 archlinux-2019.10.01-x86_64.iso
 set arch_i686 archlinux-2019.10.07-i686.iso
+set clonezilla_amd64 clonezilla-live-2.6.3-7-amd64.iso
+set clonezilla_i686 clonezilla-live-2.6.3-7-i686.iso
 set base ${protocol}://${server_ip}/boot
 set arch_base ${protocol}://${server_ip}/boot/archlinux-2019.10.07-i686
 set int_base http://mirror.yandex.ru/archlinux/iso
@@ -39,6 +41,9 @@ set int_base http://mirror.yandex.ru/archlinux/iso
 menu *** MAIN MENU ***
 item --gap Windows Tools
 item --key w winpe Windows PE
+item --gap Tools
+item clonezilla64 clonezilla-live-amd64 ISO boot
+item clonezilla32 clonezilla-live-i686 ISO boot
 item --key d dban DBAN
 item --gap Linux installers
 item arch64 archlinux-x86_64 ISO boot
@@ -96,6 +101,22 @@ kernel ${base}/wimboot
 initrd ${base}/winpe/media/Boot/BCD          BCD
 initrd ${base}/winpe/media/Boot/boot.sdi     boot.sdi
 initrd ${base}/winpe/media/sources/boot.wim  boot.wim
+boot || goto failed
+
+:clonezilla64
+echo Running Clonezilla 64bit...
+
+kernel ${base}/memdisk || read void
+initrd ${base}/iso/${clonezilla_amd64} || read void
+imgargs memdisk iso raw || read void
+boot || goto failed
+
+:clonezilla32
+echo Running Clonezilla 32bit...
+
+kernel ${base}/memdisk || read void
+initrd ${base}/iso/${clonezilla_i686} || read void
+imgargs memdisk iso raw || read void
 boot || goto failed
 
 :dban
