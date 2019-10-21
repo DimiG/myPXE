@@ -3,7 +3,7 @@
 #########################################################################
 # File: boot.ipxe
 # Created by: Dmitri G.
-# Date: 2019-10-17
+# Date: 2019-10-21
 # Description: This Command File Run iPXE routine
 #########################################################################
 
@@ -20,52 +20,46 @@ dhcp
 
 # Some menu defaults
 set menu-timeout 30000
-set menu-default shell
+set submenu-default1 arch64
+set submenu-default2 clonezilla64
+set submenu-timeout1 ${menu-timeout}
+set submenu-timeout2 ${menu-timeout}
 isset ${menu-default} || set menu-default shell
 
 # Variables setup (set your HTTP server IP address)
 set protocol http
 set server_ip xx.xx.x.xx
-set dban_iso dban-2.3.0_i586.iso
 set arch_x86_64 archlinux-2019.10.01-x86_64.iso
 set arch_i686 archlinux-2019.10.07-i686.iso
+set centos_x86_64 CentOS-8-x86_64-1905-boot.iso
 set clonezilla_amd64 clonezilla-live-2.6.3-7-amd64.iso
-set clonezilla_i686 clonezilla-live-2.6.3-7-i686.iso
+set dban_iso dban-2.3.0_i586.iso
 set base ${protocol}://${server_ip}/boot
 set arch_base ${protocol}://${server_ip}/boot/archlinux-2019.10.07-i686
-set int_base http://mirror.yandex.ru/archlinux/iso
+set arch_int_base http://mirror.yandex.ru/archlinux/iso
 
 ###################
 :boot_menu
 ###################
 menu *** MAIN MENU ***
-item --gap Windows Tools
-item --key w winpe Windows PE
-item --gap Tools
-item clonezilla64 clonezilla-live-amd64 ISO boot
-item clonezilla32 clonezilla-live-i686 ISO boot
-item --key d dban DBAN
-item --gap Linux installers
-item arch64 archlinux-x86_64 ISO boot
-item arch32 archlinux-i686 ISO boot
-item arch_i686 archlinux-i686 boot
-item --gap Linux internet installers
-item arch64int archlinux-x86_64 INTERNET boot
-item --gap iPXE tools
-item shell Drop to iPXE shell
-item ipxe_dhcp Get IP by DHCP
-item --key r reboot Reboot computer
-item --key p poweroff Poweroff computer
+item --gap --             ------------------------- Operating systems ------------------------------
+item --key w winpe        Windows PE
+item --gap --             ------------------------- Tools and Utilities ----------------------------
+item --key i menu-install Installers...
+item menu-recovery        Recovery tools...
+item pxelinux             Load PXELinux menu
+item --key d dban         DBAN
+item --gap --             ------------------------- Advanced options -------------------------------
+item shell                Drop to iPXE shell (Hit Esc)
+item ipxe_dhcp            Get IP by DHCP
+item --key r reboot       Reboot computer
+item --key p poweroff     Poweroff computer
 item
-item --key x exit Exit iPXE and continue BIOS/UEFI boot
+item --key x exit         Exit iPXE and continue BIOS/UEFI boot
 
 choose --timeout ${menu-timeout} --default ${menu-default} target || goto cancel
 set menu-timeout 0
 goto ${target}
-
-###################
-# MAIN MENU ITEMS
-###################
 
 :failed
 echo Booting failed, Dropping to shell !!!
@@ -94,6 +88,19 @@ shell
 set menu-timeout 0
 goto boot_menu
 
+:back
+set submenu-timeout1 0
+clear submenu-default1
+set submenu-timeout2 0
+clear submenu-default2
+goto boot_menu
+
+:pxelinux
+set 210:string tftp://${next-server}/
+chain ${210:string}pxelinux.0 || goto failed
+
+############ MAIN MENU ITEMS ############
+
 :winpe
 echo Running WinPE...
 
@@ -103,44 +110,47 @@ initrd ${base}/winpe/media/Boot/boot.sdi     boot.sdi
 initrd ${base}/winpe/media/sources/boot.wim  boot.wim
 boot || goto failed
 
-:clonezilla64
-echo Running Clonezilla 64bit...
-
-kernel ${base}/memdisk || read void
-initrd ${base}/iso/${clonezilla_amd64} || read void
-imgargs memdisk iso raw || read void
-boot || goto failed
-
-:clonezilla32
-echo Running Clonezilla 32bit...
-
-kernel ${base}/memdisk || read void
-initrd ${base}/iso/${clonezilla_i686} || read void
-imgargs memdisk iso raw || read void
-boot || goto failed
-
 :dban
 echo Running DBAN...
 
-kernel ${base}/memdisk || read void
-initrd ${base}/iso/${dban_iso} || read void
-imgargs memdisk iso raw || read void
+kernel ${base}/memdisk
+initrd ${base}/iso/${dban_iso}
+imgargs memdisk iso raw
 boot || goto failed
+
+############################ INSTALLER MENU #########################
+
+:menu-install
+menu *** INSTALLERs MENU ***
+item --gap --             ------------------------- Linux installers x86_64 ------------------------
+item arch64               Archlinux-x86_64 ISO boot
+item arch64int            Archlinux-x86_64 INTERNET boot
+item
+item centos64             CentOS-8-x86_64 ISO boot
+item --gap --             ------------------------- Linux installers i686 --------------------------
+item arch32               Archlinux-i686 ISO boot
+item arch_i686            Archlinux-i686 LOCAL boot
+item
+item --key 0x08 back      Back to *** MAIN MENU ***
+isset ${submenu-default1} && goto menu-install-timed ||
+choose target && goto ${target} || goto boot_menu
+:menu-install-timed
+choose --timeout ${submenu-timeout1} --default ${submenu-default1} target && goto ${target} || goto boot_menu
 
 :arch64
 echo Running Arch Linux x86_64 installer...
 
-kernel ${base}/memdisk || read void
-initrd ${base}/iso/${arch_x86_64} || read void
-imgargs memdisk iso raw || read void
+kernel ${base}/memdisk
+initrd ${base}/iso/${arch_x86_64}
+imgargs memdisk iso raw
 boot || goto failed
 
 :arch32
 echo Running Arch Linux i686 installer...
 
-kernel ${base}/memdisk || read void
-initrd ${base}/iso/${arch_i686} || read void
-imgargs memdisk iso raw || read void
+kernel ${base}/memdisk
+initrd ${base}/iso/${arch_i686}
+imgargs memdisk iso raw
 boot || goto failed
 
 :arch_i686
@@ -156,8 +166,36 @@ echo Running Arch Linux x86_64 internet installer...
 echo -n Arch Linux version. Enter version DATE as 2019.10.01: && read arch_ver
 isset ${arch_ver} || set arch_ver 2019.10.01
 
-kernel ${base}/memdisk || read void
-initrd ${int_base}/${arch_ver}/archlinux-${arch_ver}-x86_64.iso || read void
-imgargs memdisk iso raw || read void
+kernel ${base}/memdisk
+initrd ${arch_int_base}/${arch_ver}/archlinux-${arch_ver}-x86_64.iso
+imgargs memdisk iso raw
+boot || goto failed
+
+:centos64
+echo Running CentOS Linux x86_64 installer...
+
+kernel ${base}/memdisk
+initrd ${base}/iso/${centos_x86_64}
+imgargs memdisk iso raw
+boot || goto failed
+
+###################### RECOVERY MENU ################################
+
+:menu-recovery
+menu *** RECOVERY TOOLs MENU ***
+item clonezilla64         Clonezilla-live-amd64 ISO boot
+item
+item --key 0x08 back      Back to *** MAIN MENU ***
+isset ${submenu-default2} && goto menu-recovery-timed ||
+choose target && goto ${target} || goto boot_menu
+:menu-recovery-timed
+choose --timeout ${submenu-timeout2} --default ${submenu-default2} target && goto ${target} || goto boot_menu
+
+:clonezilla64
+echo Running Clonezilla 64bit...
+
+kernel ${base}/memdisk
+initrd ${base}/iso/${clonezilla_amd64}
+imgargs memdisk iso raw
 boot || goto failed
 

@@ -17,10 +17,10 @@ Code descriptions
 │   ├── isolinux
 │   └── loader
 ├── iso
+│   ├── CentOS-8-x86_64-1905-boot.iso
 │   ├── archlinux-2019.10.01-x86_64.iso
 │   ├── archlinux-2019.10.07-i686.iso
 │   ├── clonezilla-live-2.6.3-7-amd64.iso
-│   ├── clonezilla-live-2.6.3-7-i686.iso
 │   └── dban-2.3.0_i586.iso
 ├── memdisk
 ├── vmlinuz
