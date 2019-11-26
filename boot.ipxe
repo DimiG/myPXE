@@ -3,7 +3,7 @@
 #########################################################################
 # File: boot.ipxe
 # Created by: Dmitri G.
-# Date: 2019-10-22
+# Date: 2019-11-26
 # Description: This Command File Run iPXE routine
 #########################################################################
 
@@ -35,14 +35,16 @@ set alpine_cmdline modules=loop,squashfs quiet nomodeset
 set alpine_flavor vanilla
 
 # Distros names and versions (change names to actual ones)
-set _arch_ver 2019.10.01
+set _arch_i686_ver 2019.11.10
+set _arch_x86_64_ver 2019.11.01
 set centos_x86_64 CentOS-8-x86_64-1905-boot.iso
 set clonezilla_amd64 clonezilla-live-2.6.3-7-amd64.iso
 set dban_iso dban-2.3.0_i586.iso
 
 # Network location (change links to actual ones)
 set base ${protocol}://${server_ip}/boot
-set arch_int_base ${protocol}://mirror.yandex.ru/archlinux/iso
+set arch_i686_base ${protocol}://mirror.yandex.ru/archlinux32/archisos
+set arch_x86_64_base ${protocol}://mirror.yandex.ru/archlinux/iso
 set centos_int_base ${protocol}://mirror.yandex.ru/centos/8.0.1905/isos/x86_64/${centos_x86_64}
 set alpine_x86_base ${protocol}://${server_ip}/boot/distro/alpine-extended-3.10.2-x86
 set alpine_x86_64_base ${protocol}://${server_ip}/boot/distro/alpine-extended-3.10.3-x86_64
@@ -123,7 +125,10 @@ menu *** INSTALLERs MENU ***
 item --gap --             ------------------------- Linux installers -------------------------------
 item alpine-x86           Alpine Linux x86 (local)
 item alpine-x86_64        Alpine Linux x86_64 (local)
-item arch64               Archlinux-x86_64 (internet)
+item
+item arch-i686            Archlinux-i686 (internet)
+item arch-x86_64          Archlinux-x86_64 (internet)
+item
 item centos64             CentOS-8-x86_64 (internet)
 item
 item --key 0x08 back      Back to *** MAIN MENU ***
@@ -131,16 +136,6 @@ isset ${submenu1-default} && goto menu-install-timed ||
 choose target && goto ${target} || goto boot_menu
 :menu-install-timed
 choose --timeout ${submenu1-timeout} --default ${submenu1-default} target && goto ${target} || goto boot_menu
-
-:arch64
-echo Running Arch Linux x86_64 internet installer...
-echo -n Enter Arch Linux version DATE as YYYY.MM.DD (current ${_arch_ver}): && read arch_ver
-isset ${arch_ver} || set arch_ver ${_arch_ver}
-
-kernel ${base}/memdisk
-initrd ${arch_int_base}/${arch_ver}/archlinux-${arch_ver}-x86_64.iso
-imgargs memdisk iso raw
-boot || goto failed
 
 :alpine-x86
 echo Running Alpine Linux i686 installer...
@@ -158,6 +153,26 @@ kernel ${alpine_x86_64_base}/boot/vmlinuz-${alpine_flavor} ${alpine_cmdline} alp
 initrd ${alpine_x86_64_base}/boot/initramfs-${alpine_flavor}
 boot || goto failed
 
+:arch-i686
+echo Running Arch Linux i686 internet installer...
+echo -n Enter Arch Linux version DATE as YYYY.MM.DD (current ${_arch_i686_ver}): && read arch_i686_ver
+isset ${arch_i686_ver} || set arch_i686_ver ${_arch_i686_ver}
+
+kernel ${base}/memdisk
+initrd ${arch_i686_base}/archlinux-${arch_i686_ver}-i686.iso
+imgargs memdisk iso raw
+boot || goto failed
+
+:arch-x86_64
+echo Running Arch Linux x86_64 internet installer...
+echo -n Enter Arch Linux version DATE as YYYY.MM.DD (current ${_arch_x86_64_ver}): && read arch_x86_64_ver
+isset ${arch_x86_64_ver} || set arch_x86_64_ver ${_arch_x86_64_ver}
+
+kernel ${base}/memdisk
+initrd ${arch_x86_64_base}/${arch_x86_64_ver}/archlinux-${arch_x86_64_ver}-x86_64.iso
+imgargs memdisk iso raw
+boot || goto failed
+
 :centos64
 echo Running CentOS Linux x86_64 internet installer...
 
@@ -172,6 +187,7 @@ boot || goto failed
 menu *** RECOVERY TOOLs MENU ***
 item --gap --             ------------------------- Cloning Tools ----------------------------------
 item clonezilla64         Clonezilla-AMD64
+item
 item --gap --             ------------------------- Tools ------------------------------------------
 item pxelinux             Load PXELinux menu
 item
@@ -182,7 +198,7 @@ choose target && goto ${target} || goto boot_menu
 choose --timeout ${submenu2-timeout} --default ${submenu2-default} target && goto ${target} || goto boot_menu
 
 :clonezilla64
-echo Running Clonezilla 64bit from internet...
+echo Running Clonezilla 64bit...
 
 kernel ${base}/memdisk
 initrd ${base}/iso/${clonezilla_amd64}
